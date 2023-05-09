@@ -6,7 +6,7 @@ import json
 import dateutil.parser
 import babel
 from flask_migrate import Migrate
-from flask import Flask, render_template, request, Response, flash, redirect, url_for, abort
+from flask import Flask, jsonify, render_template, request, Response, flash, redirect, url_for, abort
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 import logging
@@ -33,7 +33,7 @@ class Venue(db.Model):
     state = db.Column(db.String)
     address = db.Column(db.String)
     phone = db.Column(db.String)
-    genres = db.column(db.String)
+    genres = db.Column(db.String)
     image_link = db.Column(db.String)
     facebook_link = db.Column(db.String)
     website_link = db.Column(db.String)
@@ -144,7 +144,9 @@ def search_venues():
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
-  venue = Venue.query.get(venue_id)
+  venue = Venue.query.filter_by(id=venue_id).first()
+  
+  print(venue.genres)
   venue_shows = Show.query.filter_by(venue_id=venue_id).all()
   pastShowsCount = nextShowsCount = 0
   pastShows = nextShows = []
@@ -159,11 +161,20 @@ def show_venue(venue_id):
       pastShowsCount += 1
       pastShows.append({"artist_id" : artista.id, "artist_name": artista.name, "artist_image_link" : artista.image_link,
                       "start_time" : show.startTime})
-    
+  # data = {}
+  aux = venue.genres.split(",")
+  genres = []
+  for genre in aux:
+    replacing = genre.replace("{","")
+    replacing = replacing.replace("}","")
+    genres.append(replacing)
+
+  
+  # print(genres)    
   data = {
     "id": venue_id,
     "name": venue.name,
-    "genres": venue.genres,
+    "genres": genres, 
     "address": venue.address,
     "city": venue.city,
     "state": venue.state,
@@ -177,7 +188,9 @@ def show_venue(venue_id):
     "upcoming_shows": nextShows,
     "past_shows_count": pastShowsCount,
     "upcoming_shows_count": nextShowsCount,
-  }    
+  }   
+  
+  # print(data) 
 
   return render_template('pages/show_venue.html', venue=data)
 
@@ -203,19 +216,17 @@ def create_venue_submission():
   facebook_link = form.facebook_link.data.strip()
   website_link = form.website_link.data.strip()
   genres = form.genres.data
-  looking_talent = True if(form.seeking_talent =='Yes') else False
+  looking_talent = form.seeking_talent.data
   seeking_desc = form.seeking_description.data.strip()
 
   if not form.validate():
     flash(form.errors)
-    print(form.data)
+    # print(form.data)
     return redirect(url_for('create_venue_submission'))
   else:
     error_in_insert = False
-    print(form.data)
+    # print(form.data)
 
-  
-    # try insert form data into db
   try:
 
     venue = Venue(
@@ -244,13 +255,23 @@ def create_venue_submission():
   
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
-def delete_venue(venue_id):
-  # TODO: Complete this endpoint for taking a venue_id, and using
-  # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
-
-  # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
+ # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
-  return None
+
+def delete_venue(venue_id):
+  try:
+    myVenue = Venue.query.filter_by(id=venue_id).first()
+    venueName = myVenue.name
+    Venue.query.filter_by(id=venue_id).delete()
+    db.session.commit()
+    flash('Venue ' + venueName + ' was successfully deleted!')
+  except:
+    print('deu ruim')
+    db.session.rollback()
+  finally: 
+    db.session.close()
+  print('checkpoint1')
+  return jsonify({'success': True })
 
 #  Artists
 #  ----------------------------------------------------------------
