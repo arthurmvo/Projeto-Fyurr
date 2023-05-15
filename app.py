@@ -116,8 +116,9 @@ def venues():
   for venue in num_venues:
     i = 0
     strVenue = []
+
     for show in all_shows:
-      if (show.venue_id == venue.id & show.startTime > datetime.utcnow):
+      if (show.venue_id == venue.id) & (show.startTime > datetime.utcnow()):
         i += 1
     strVenue.append({"id" : venue.id, "name": venue.name, "num_upcoming_shows":i})
     data.append({"city": venue.city, "state": venue.state, "venues" : strVenue})
@@ -137,7 +138,7 @@ def search_venues():
     if (s_keyword.lower() in venue.name.lower()):
       count += 1
       for show in all_shows:
-        if (show.venue_id == venue.id & show.startTime > datetime.utcnow):
+        if (show.venue_id == venue.id) & (show.startTime > datetime.utcnow()):
           i += 1
       data.append({"id" : venue.id, "name" : venue.name, "num_upcoming_shows" : i})
     response = {"count" : count, "data" : data}
@@ -151,19 +152,20 @@ def show_venue(venue_id):
   print(venue.genres)
   venue_shows = Show.query.filter_by(venue_id=venue_id).all()
   pastShowsCount = nextShowsCount = 0
-  pastShows = nextShows = []
+  pastShows = []
+  nextShows = []
   for show in venue_shows:
     id_artista = show.artist_id
     artista = Artist.query.get(id_artista)
-    if show.startTime < datetime.utcnow:
+    if show.startTime > datetime.utcnow():
       nextShowsCount += 1
       nextShows.append({"artist_id" : artista.id, "artist_name": artista.name, "artist_image_link" : artista.image_link,
-                  "start_time" : show.startTime})
+                  "start_time" : str(show.startTime)})
     else:
       pastShowsCount += 1
       pastShows.append({"artist_id" : artista.id, "artist_name": artista.name, "artist_image_link" : artista.image_link,
-                      "start_time" : show.startTime})
-  # data = {}
+                      "start_time" : str(show.startTime)})
+
   aux = venue.genres.split(",")
   genres = []
   for genre in aux:
@@ -296,7 +298,7 @@ def search_artists():
     if (s_keyword.lower() in artist.name.lower()):
       count += 1
       for show in allShows:
-        if (show.artist_id == artist.id & show.startTime > datetime.utcnow):
+        if (show.artist_id == artist.id) & (show.startTime > datetime.utcnow()):
           i += 1
       data.append({"id": artist.id, "name": artist.name, "num_upcoming_shows":i})
     response = {"count":count, "data": data}
@@ -309,19 +311,22 @@ def show_artist(artist_id):
   
   artist_shows = Show.query.filter_by(artist_id=artist_id).all()
   pastShowsCount = nextShowsCount = 0
-  pastShows = nextShows = []
+  pastShows = []
+  nextShows = []
   
   for show in artist_shows:
-    
-    if show.startTime < datetime.utcnow:
+    venue = Venue.query.filter_by(id=show.venue_id).first()
+    if show.startTime > datetime.utcnow():
       nextShowsCount +=1
-      nextShows.append({"artist_id" : artist.id, "artist_name": artist.name, "artist_image_link" : artist.image_link,
-                    "start_time" : show.startTime})
+      nextShows.append({"venue_id" : venue.id, "venue_name": venue.name, "venue_image_link" : venue.image_link,
+                    "start_time" : str(show.startTime)})
     else:
       pastShowsCount +=1
-      pastShows.append({"artist_id" : artist.id, "artist_name": artist.name, "artist_image_link" : artist.image_link,
-                    "start_time" : show.startTime})
-      
+      pastShows.append({"venue_id" : venue.id, "venue_name": venue.name, "venue_image_link" : venue.image_link,
+                    "start_time" : str(show.startTime)})
+  
+  print(pastShows)
+  print(nextShows)
   aux = artist.genres.split(",")
   genres = []
   for genre in aux:
@@ -417,7 +422,7 @@ def show_artist(artist_id):
   #   "past_shows_count": 0,
   #   "upcoming_shows_count": 3,
   # }
-  print(artist.looking_talent)
+
   return render_template('pages/show_artist.html', artist=data)
 
 #  Update
