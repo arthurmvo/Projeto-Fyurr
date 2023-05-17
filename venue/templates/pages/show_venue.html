@@ -75,7 +75,7 @@
 	</div>
 </section>
 
-<a href="/venues/{{ venue.id }}/edit"><button class="btn btn-primary btn-lg">Edit</button></a>
+<a href="{{url_for('venue_bp.edit_venue', venue_id=venue.id)}}"><button class="btn btn-primary btn-lg">Edit</button></a>
 <a> <button id = "delete-btn" data-id = "{{venue.id}}"  class="btn btn-warning btn-lg">Delete</button> </a>
 <script>
 	const deleteBtn = document.getElementById("delete-btn")
